@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SensiSign AI</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #00FF94;
+            --primary-glow: rgba(0, 255, 148, 0.3);
+            --bg-dark: #050810;
+            --glass-bg: rgba(15, 23, 42, 0.6);
+            --text-main: #FFFFFF;
+            --text-muted: #8E9AAF;
+            --accent: #FF3D71;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-image:
+                radial-gradient(circle at 10% 20%, rgba(0, 255, 148, 0.05) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(59, 130, 246, 0.05) 0%, transparent 40%);
+        }
+
+        /* --- Fullscreen Layout --- */
+        .viewport {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+
+        .main-container {
+            position: relative;
+            width: 100%;
+            max-width: 1200px;
+            height: 100%;
+            max-height: 800px;
+            background: #000;
+            border-radius: 2.5rem;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 50px 100px -20px rgba(0, 0, 0, 0.8);
+        }
+
+        .video-feed {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            filter: contrast(1.1) brightness(1.1);
+        }
+
+        /* --- Floating UI Elements --- */
+        .glass-overlay {
+            position: absolute;
+            background: var(--glass-bg);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 1.5rem;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        .header-floating {
+            top: 1.5rem;
+            left: 1.5rem;
+            padding: 0.75rem 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            z-index: 10;
+        }
+
+        .logo-text {
+            font-weight: 600;
+            font-size: 1.1rem;
+            letter-spacing: 1px;
+            background: linear-gradient(to right, #00FF94, #00D1FF);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #FF3D71;
+            box-shadow: 0 0 10px rgba(255, 61, 113, 0.5);
+        }
+
+        .status-dot.active {
+            background: var(--primary);
+            box-shadow: 0 0 10px var(--primary-glow);
+        }
+
+        .controls-floating {
+            top: 1.5rem;
+            right: 1.5rem;
+            padding: 0.5rem;
+            display: flex;
+            gap: 0.5rem;
+            z-index: 10;
+        }
+
+        .icon-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            width: 45px;
+            height: 45px;
+            border-radius: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 1.2rem;
+        }
+
+        .icon-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-main);
+            transform: translateY(-2px);
+        }
+
+        .icon-btn.active {
+            color: var(--primary);
+            background: rgba(0, 255, 148, 0.1);
+        }
+
+        .prediction-hud {
+            position: absolute;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 1rem;
+            text-align: center;
+            min-width: 280px;
+            animation: slideUp 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 10;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translate(-50%, 50px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translate(-50%, 0);
+                opacity: 1;
+            }
+        }
+
+        .hud-label {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            color: var(--text-main);
+            margin-bottom: 0.25rem;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+        }
+
+        .hud-value {
+            font-size: 5rem;
+            font-weight: 600;
+            color: var(--primary);
+            text-shadow: 0 0 20px rgba(0, 0, 0, 0.9), 0 0 40px var(--primary-glow);
+            letter-spacing: -1px;
+        }
+
+        .library-floating {
+            bottom: 1.5rem;
+            left: 1.5rem;
+            padding: 1rem;
+            max-width: 250px;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .library-title {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--text-muted);
+            margin-bottom: 0.25rem;
+        }
+
+        .word-pills {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+        }
+
+        .word-pill {
+            padding: 0.25rem 0.6rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 0.5rem;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        /* --- Mobile Responsiveness --- */
+        @media (max-width: 768px) {
+            .viewport {
+                padding: 0.5rem;
+            }
+
+            .main-container {
+                border-radius: 1.5rem;
+            }
+
+            .prediction-hud {
+                min-width: 200px;
+                padding: 1rem 2rem;
+                bottom: 1.5rem;
+            }
+
+            .hud-value {
+                font-size: 2.5rem;
+            }
+
+            .library-floating {
+                display: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="viewport">
+        <div class="main-container">
+            <!-- Header Overlay -->
+            <div class="glass-overlay header-floating">
+                <div id="statusDot" class="status-dot"></div>
+                <span class="logo-text">SensiSign AI</span>
+            </div>
+
+            <!-- Controls Overlay -->
+            <div class="glass-overlay controls-floating">
+                <button id="ttsBtn" class="icon-btn" title="Voice Assistant">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+                        <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                        <line x1="12" y1="19" x2="12" y2="23" />
+                        <line x1="8" y1="23" x2="16" y2="23" />
+                    </svg>
+                </button>
+                <button id="fullscreenBtn" class="icon-btn" title="Toggle Fullscreen">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M8 3H5a2 2 0 0 0-2 2v3" />
+                        <path d="M21 8V5a2 2 0 0 0-2-2h-3" />
+                        <path d="M3 16v3a2 2 0 0 0 2 2h3" />
+                        <path d="M16 21h3a2 2 0 0 0 2-2v-3" />
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Video Feed -->
+            <img class="video-feed" src="{{ url_for('video_feed') }}" alt="Sign Language Stream">
+
+            <!-- Prediction Overlay -->
+            <div class="prediction-hud">
+                <div class="hud-label">Recognized Sign</div>
+                <div id="predictionVal" class="hud-value">---</div>
+            </div>
+
+            <!-- Library Overlay -->
+            <div class="glass-overlay library-floating">
+                <div class="library-title">Trained Library</div>
+                <div id="libraryList" class="word-pills">
+                    <!-- Dynamic Words -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let lastPrediction = "";
+        let ttsEnabled = false;
+        const synth = window.speechSynthesis;
+
+        async function updateStatus() {
+            try {
+                const response = await fetch('/status');
+                const data = await response.json();
+                const dot = document.getElementById('statusDot');
+                const libraryList = document.getElementById('libraryList');
+
+                if (data.model_loaded) {
+                    dot.classList.add('active');
+                    libraryList.innerHTML = '';
+                    data.labels.forEach(label => {
+                        const pill = document.createElement('div');
+                        pill.className = 'word-pill';
+                        pill.innerText = label;
+                        libraryList.appendChild(pill);
+                    });
+                }
+            } catch (e) {
+                console.error("Status check failed", e);
+            }
+        }
+
+        // TTS Toggle
+        document.getElementById('ttsBtn').addEventListener('click', function () {
+            ttsEnabled = !ttsEnabled;
+            this.classList.toggle('active');
+            if (ttsEnabled) speak("Voice Assistant Active");
+        });
+
+        // Fullscreen Toggle
+        document.getElementById('fullscreenBtn').addEventListener('click', function () {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+            } else {
+                document.exitFullscreen();
+            }
+        });
+
+        function speak(text) {
+            if (!ttsEnabled || !text || text === "---") return;
+            synth.cancel();
+            const utter = new SpeechSynthesisUtterance(text);
+            utter.rate = 1.0;
+            utter.pitch = 1.1;
+            synth.speak(utter);
+        }
+
+        async function pollPrediction() {
+            try {
+                const response = await fetch('/get_prediction');
+                const data = await response.json();
+                const display = document.getElementById('predictionVal');
+
+                if (data.prediction && data.prediction !== "") {
+                    if (data.prediction !== lastPrediction) {
+                        lastPrediction = data.prediction;
+                        display.innerText = data.prediction;
+                        speak(data.prediction);
+
+                        // Small animation on change
+                        display.style.transform = "scale(1.1)";
+                        setTimeout(() => display.style.transform = "scale(1)", 100);
+                    }
+                } else {
+                    display.innerText = "";
+                    lastPrediction = "";
+                }
+            } catch (e) {
+                console.error("Poll error", e);
+            }
+            setTimeout(pollPrediction, 200);
+        }
+
+        updateStatus();
+        pollPrediction();
+    </script>
+</body>
+
+</html>
